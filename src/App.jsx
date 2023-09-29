@@ -1,29 +1,25 @@
 import './App.css'
 import { useState } from 'react'
+import confetti from 'canvas-confetti'
 
-// Dos posibles valores para los turnos
-const TURNOS = {
-  X: 'X',
-  O: 'O'
-}
+// Componente(s)
+import Square from './components/Square'
+import WinnerModal from './components/WinnerModal'
 
-// Componente que representa una casilla
-const Square = ({children, updateBoard, index, isSelected}) => {
-  /* Dependiendo del valor de isSelected,
-  se le asignara una clase especial. */
+import  BotonReiniciar  from './components/botonReiniciar'
 
-  const handleClick = () => {
-    updateBoard(index)
-  }
+// Constantes
+import { TURNOS } from './constants'
+import { WINCOMBINATIONS } from './constants'
+
+// Funciones
+import { checkEndGame } from './board'
+import { checkWinner } from './board'
+import { Tablero } from './components/Tablero';
 
 
-  const className = `square ${isSelected ? 'is-selected' : ''}`
-  return (
-    <div className={className} onClick={handleClick}>
-        {children}
-    </div>
-  )
-}
+
+
 function App() {
 
   /*/
@@ -41,9 +37,24 @@ function App() {
   // Cambiar los turnos
   const [turno, setTurno] = useState(TURNOS.X)
 
+  // useState para saber si hay algun ganador, con un valor booleano
+  const [winner, setWinner] = useState(null) // usaremos null, para hacer referencia a que aun no hay un ganador. false se usara para mostrar un empate
+
+
+  const resetGame = () => {
+    // Regresar a todos los estados a sus valores predeterminados
+    setTablero(Array(9).fill(null))
+    setTurno(TURNOS.X)
+    setWinner(null)
+  }
+
+
   // Actualizar el tablero y los turnos
   const updateBoard = (index) => {
 
+
+    // No actualizamos posicion, si ya tiene algo
+    if(tablero[index] || winner) return
     // Las props son inmutables, debes crear una copia del arreglo para actualizarlo, sin afectar al original
     const newTablero = [...tablero]
     newTablero[index] = turno // X o O
@@ -53,32 +64,28 @@ function App() {
     const newTurn = turno === TURNOS.X ? TURNOS.O : TURNOS.X
 
     setTurno(newTurn)
+
+    // Revisar si hay ganador
+    const newWinner = checkWinner(newTablero)
+
+    if(newWinner){
+      setWinner(newWinner) // Los estados son asincronos, no bloquea el renderizado de un componente ni la ejecucion del codigo que hay despues.
+      confetti()
+
+
+      // setWinner(winner)
+    }else if(checkEndGame(newTablero)){
+      setWinner(false) // empate
+    }
   }
 
 
   return (
     <main className='board'>
           <h1>Tic Tac Toe</h1>
-          <section className='game'>
-            {
+          <BotonReiniciar resetGame={resetGame}/>
 
-              /* Mapeo de cada elemento del
-                arreglo, para desplegarlo usando el componente Square
-              */
-              tablero.map((item, index) => {
-                return (
-                  
-                  <Square
-                    key={index}
-                    index = {index}
-                    updateBoard={updateBoard}
-                    >
-                      {item}
-                    </Square>
-                )
-              })
-            }
-          </section>
+          <Tablero tablero={tablero} updateBoard={updateBoard}/>
 
           <section className='turn'>
             {/* Checar el turno, con valores
@@ -91,6 +98,8 @@ function App() {
               {TURNOS.O}
             </Square>
           </section>
+
+          <WinnerModal winner={winner} resetGame={resetGame}/>
     </main>
   )
 }
