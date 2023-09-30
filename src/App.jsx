@@ -30,12 +30,20 @@ function App() {
   // const tablero = Array(9).fill(null)
 
   // Crear el tablero
-  const [tablero, setTablero] = useState(Array(9).fill(null))
+  const [tablero, setTablero] = useState(() => {
+    const tableroFromStorage = window.localStorage.getItem('tablero')
+
+    return tableroFromStorage ? JSON.parse(tableroFromStorage) : Array(9).fill(null)
+  })
 
   // Usaremos un estado, para ir cambiando valor del turno para cada uno de los jugadores
 
   // Cambiar los turnos
-  const [turno, setTurno] = useState(TURNOS.X)
+  const [turno, setTurno] = useState(() => {
+    const turnoFromStorage = window.localStorage.getItem('turno')
+
+    return turnoFromStorage ?? TURNOS.X
+  })
 
   // useState para saber si hay algun ganador, con un valor booleano
   const [winner, setWinner] = useState(null) // usaremos null, para hacer referencia a que aun no hay un ganador. false se usara para mostrar un empate
@@ -46,6 +54,9 @@ function App() {
     setTablero(Array(9).fill(null))
     setTurno(TURNOS.X)
     setWinner(null)
+
+    window.localStorage.removeItem('tablero')
+    window.localStorage.removeItem('turno')
   }
 
 
@@ -64,6 +75,11 @@ function App() {
     const newTurn = turno === TURNOS.X ? TURNOS.O : TURNOS.X
 
     setTurno(newTurn)
+
+    
+    // guardar partida
+    window.localStorage.setItem('tablero', JSON.stringify(newTablero))
+    window.localStorage.setItem('turno', newTurn)
 
     // Revisar si hay ganador
     const newWinner = checkWinner(newTablero)
